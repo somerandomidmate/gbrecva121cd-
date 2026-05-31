@@ -491,7 +491,18 @@
         </div>
     </div>
 
+    <!-- Include the official Supabase CDN Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
+        // === CONFIGURATION: REPLACE THESE WITH YOUR COPIED SUPABASE CREDENTIALS ===
+        const SUPABASE_URL = "https://saahgumsxrxiunhhumek.supabase.co/rest/v1/";
+        const SUPABASE_ANON_KEY = "sb_publishable_GZWcN_NPlPsfCDAGjfEBtQ_2fld89Lt";
+        // =========================================================================
+
+        // Initialize the Supabase Client
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         let app = {
             balls: 0, strikes: 0, outs: 0,
             scoreAway: 0, scoreHome: 0,
@@ -500,8 +511,8 @@
             fieldBases: [false, false, false]
         };
 
-        // Create a Broadcast Channel named 'scorebug_sync'
-        const syncChannel = new BroadcastChannel('scorebug_sync');
+        // Create a cloud real-time channel named 'scorebug_sync'
+        const syncChannel = supabaseClient.channel('scorebug_sync');
 
         // Check if this instance is the OBS Overlay or the Controller
         const urlParams = new URLSearchParams(window.location.search);
@@ -510,7 +521,7 @@
         // If it's the overlay, hide the control panel instantly
         if (isOverlayMode) {
             document.querySelector('.workbench').style.display = 'none';
-            document.body.style.backgroundColor = 'transparent'; // Makes OBS background transparent
+            document.body.style.backgroundColor = 'transparent'; // Transparent background for OBS
         }
 
         const mlbDatabase = {
@@ -563,55 +574,61 @@
             bases: [document.getElementById('b-1st'), document.getElementById('b-2nd'), document.getElementById('b-3rd')]
         };
 
-        // Helper function to broadcast state data to OBS
+        // Network broadcasting broadcast call
         function dispatchStateSync(customAction = null) {
             if (!isOverlayMode) {
-                syncChannel.postMessage({
-                    type: 'STATE_UPDATE',
-                    appState: app,
-                    lineup: {
-                        pitcher: document.getElementById('in-p-name').value,
-                        pitchCount: document.getElementById('in-p-count').value,
-                        batter: document.getElementById('in-b-name').value,
-                        batStats: document.getElementById('in-b-stats').value,
-                        clockVal: document.getElementById('in-clock-val').value,
-                        awayTeam: document.getElementById('sel-away').value,
-                        homeTeam: document.getElementById('sel-home').value
-                    },
-                    triggerAction: customAction
+                syncChannel.send({
+                    type: 'broadcast',
+                    event: 'STATE_UPDATE',
+                    payload: {
+                        appState: app,
+                        lineup: {
+                            pitcher: document.getElementById('in-p-name').value,
+                            pitchCount: document.getElementById('in-p-count').value,
+                            batter: document.getElementById('in-b-name').value,
+                            batStats: document.getElementById('in-b-stats').value,
+                            clockVal: document.getElementById('in-clock-val').value,
+                            awayTeam: document.getElementById('sel-away').value,
+                            homeTeam: document.getElementById('sel-home').value
+                        },
+                        triggerAction: customAction
+                    }
                 });
             }
         }
 
-        // Listen for messages inside OBS coming from the web controller
-        syncChannel.onmessage = (event) => {
-            if (event.data.type === 'STATE_UPDATE') {
-                app = event.data.appState;
+        // Connect to real-time events pipeline
+        syncChannel
+            .on('broadcast', { event: 'STATE_UPDATE' }, ({ payload }) => {
+                app = payload.appState;
                 
-                // Sync profiles and inputs
-                document.getElementById('in-p-name').value = event.data.lineup.pitcher;
-                document.getElementById('in-p-count').value = event.data.lineup.pitchCount;
-                document.getElementById('in-b-name').value = event.data.lineup.batter;
-                document.getElementById('in-b-stats').value = event.data.lineup.batStats;
-                document.getElementById('in-clock-val').value = event.data.lineup.clockVal;
-                document.getElementById('sel-away').value = event.data.lineup.awayTeam;
-                document.getElementById('sel-home').value = event.data.lineup.homeTeam;
+                document.getElementById('in-p-name').value = payload.lineup.pitcher;
+                document.getElementById('in-p-count').value = payload.lineup.pitchCount;
+                document.getElementById('in-b-name').value = payload.lineup.batter;
+                document.getElementById('in-b-stats').value = payload.lineup.batStats;
+                document.getElementById('in-clock-val').value = payload.lineup.clockVal;
+                document.getElementById('sel-away').value = payload.lineup.awayTeam;
+                document.getElementById('sel-home').value = payload.lineup.homeTeam;
 
                 loadPresetProfile('away');
                 loadPresetProfile('home');
                 commitLineupSync();
                 setClockValue();
 
-                // Intercept score changes or animation sequences to preserve internal mechanics
-                if (event.data.triggerAction && event.data.triggerAction.name === 'SCORE_SHIFT') {
-                    animateScoreShift(event.data.triggerAction.side, event.data.triggerAction.next, event.data.triggerAction.prev);
-                } else if (event.data.triggerAction && event.data.triggerAction.name === 'HOME_RUN_ANIM') {
+                if (payload.triggerAction && payload.triggerAction.name === 'SCORE_SHIFT') {
+                    animateScoreShift(payload.triggerAction.side, payload.triggerAction.next, payload.triggerAction.prev);
+                } else if (payload.triggerAction && payload.triggerAction.name === 'HOME_RUN_ANIM') {
                     executeHRAnimationLogic();
                 }
 
                 render();
-            }
-        };
+            })
+            .on('broadcast', { event: 'UI_TOGGLE' }, ({ payload }) => {
+                const el = document.getElementById(payload.elementId);
+                if (payload.elementId === 'ui-deck-top' || payload.elementId === 'ui-deck-clock') el.classList.toggle('collapsed');
+                else el.classList.toggle('invisible');
+            })
+            .subscribe();
 
         function animateScoreShift(sideKey, incomingVal, oldVal) {
             const container = document.getElementById(`scroller-${sideKey}`);
@@ -841,34 +858,8 @@
             else if (id === 'ui-deck-clock') element.classList.toggle('collapsed');
             else element.classList.toggle('invisible');
             
-            // Send simple interface state updates over the hook channel
             if(!isOverlayMode) {
-                syncChannel.postMessage({ type: 'UI_TOGGLE', elementId: id });
-            }
-        }
-        
-        // Handle UI toggles directly inside OBS window
-        if(isOverlayMode) {
-            syncChannel.onmessage = (orig) => {
-                if(orig.data.type === 'UI_TOGGLE') {
-                    const el = document.getElementById(orig.data.elementId);
-                    if (orig.data.elementId === 'ui-deck-top' || orig.data.elementId === 'ui-deck-clock') el.classList.toggle('collapsed');
-                    else el.classList.toggle('invisible');
-                } else if (orig.data.type === 'STATE_UPDATE') {
-                    app = orig.data.appState;
-                    DOM.pitcher.textContent = orig.data.lineup.pitcher.toUpperCase();
-                    DOM.batter.textContent = orig.data.lineup.batter.toUpperCase();
-                    DOM.batStats.textContent = orig.data.lineup.batStats;
-                    document.getElementById('sel-away').value = orig.data.lineup.awayTeam;
-                    document.getElementById('sel-home').value = orig.data.lineup.homeTeam;
-                    loadPresetProfile('away'); loadPresetProfile('home');
-                    if (orig.data.triggerAction && orig.data.triggerAction.name === 'SCORE_SHIFT') {
-                        animateScoreShift(orig.data.triggerAction.side, orig.data.triggerAction.next, orig.data.triggerAction.prev);
-                    } else if (orig.data.triggerAction && orig.data.triggerAction.name === 'HOME_RUN_ANIM') {
-                        executeHRAnimationLogic();
-                    }
-                    render();
-                }
+                syncChannel.send({ type: 'broadcast', event: 'UI_TOGGLE', payload: { elementId: id } });
             }
         }
 
