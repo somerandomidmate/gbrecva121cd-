@@ -500,160 +500,50 @@
             fieldBases: [false, false, false]
         };
 
+        // Create a Broadcast Channel named 'scorebug_sync'
+        const syncChannel = new BroadcastChannel('scorebug_sync');
+
+        // Check if this instance is the OBS Overlay or the Controller
+        const urlParams = new URLSearchParams(window.location.search);
+        const isOverlayMode = urlParams.get('view') === 'overlay';
+
+        // If it's the overlay, hide the control panel instantly
+        if (isOverlayMode) {
+            document.querySelector('.workbench').style.display = 'none';
+            document.body.style.backgroundColor = 'transparent'; // Makes OBS background transparent
+        }
+
         const mlbDatabase = {
-            'ARI': { 
-                city: 'Arizona', bg: '#A71930', 
-                logo: 'Arizona_Diamondbacks_logo_teadl.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/7/7e/Arizona_Diamondbacks_wordmark_logo_teal_01.svg',
-                logoOffset: { scale: 255, x: -25, y: -35 },
-                wordmarkOffset: { scale: 50, x: 0, y: 0 }
-            },
-            'ATL': { 
-                city: 'Braves', bg: '#CE1141', 
-                logo: 'https://images.ctfassets.net/iiozhi00a8lc/t144_header_primaryATL_LOGO_092019_svg/7c2f3d4d1f352fc7162dd9c765693d4d/t144_header_primary.svg',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Atlanta_Braves_script.svg',
-                logoOffset: { scale: 255, x: -25, y: -35 },
-            },
-            'BAL': { 
-                city: 'Orioles', bg: '#DF4601', 
-                logo: 'https://upload.wikimedia.org/wikipedia/en/7/75/Baltimore_Orioles_cap.svg',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/b/b8/Baltimore_Orioles_wordmark.svg'
-            },
-            'BOS': { 
-                city: 'Red Sox', bg: '#BD3039', 
-                logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/RedSoxPrimary_HangingSocks.svg/1280px-RedSoxPrimary_HangingSocks.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/6/69/Boston_Red_Sox_load_wordmark.svg'
-            },
-            'CHC': { 
-                city: 'Cubs', bg: '#0E3386', 
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Chicago_Cubs_logo.svg/1200px-Chicago_Cubs_logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/d/de/Chicago_Cubs_wordmark.svg'
-            },
-            'CWS': { 
-                city: 'White Sox', bg: '#27251F', 
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Chicago_White_Sox_No_Border_Logo.svg/1200px-Chicago_White_Sox_No_Border_Logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/d/d4/Chicago_White_Sox_wordmark.svg'
-            },
-            'CIN': { 
-                city: 'Reds', bg: '#C6011F', 
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Cincinnati_Reds_Logo.svg/1200px-Cincinnati_Cincinnati_Reds_Logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/3/36/Cincinnati_Reds_wordmark.svg'
-            },
-            'CLE': { 
-                city: 'Guardians', bg: '#0C2340', 
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Cleveland_Guardians_Teardrop_Logo.svg/1200px-Cleveland_Guardians_Teardrop_Logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Cleveland_Guardians_wordmark.svg'
-            },
-            'COL': { 
-                city: 'Rockies', bg: '#333366', 
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Colorado_Rockies_logo.svg/1200px-Colorado_Rockies_logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Colorado_Rockies_wordmark.svg'
-            },
-            'DET': { 
-                city: 'Tigers', bg: '#0C2340', 
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Detroit_Tigers_Logo.svg/1200px-Detroit_Tigers_Logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/6/61/Detroit_Tigers_wordmark.svg'
-            },
-            'HOU': { 
-                city: 'Astros', bg: '#002D62', 
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Houston-Astros-Logo.svg/1200px-Houston-Astros-Logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Houston_Astros_wordmark.svg'
-            },
-            'KC':  { 
-                city: 'Royals', bg: '#004687', 
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Kansas_City_Royals_Lightning_Logo.svg/1200px-Kansas_City_Royals_Lightning_Logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/1/13/Kansas_City_Royals_wordmark.svg'
-            },
-            'LAA': { 
-                city: 'Angels', bg: '#BA0021', 
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Los_Angeles_Angels_of_Anaheim_Official_Logo.svg/1200px-Los_Angeles_Angels_of_Anaheim_Official_Logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/2/23/Los_Angeles_Angels_wordmark.svg'
-            },
-            'LAD': { 
-                city: 'Dodgers', bg: '#005A9C', 
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Los_Angeles_Dodgers_Logo.svg/1200px-Los_Angeles_Dodgers_Logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/f/f6/Los_Angeles_Dodgers_script.svg'
-            },
-            'MIA': { 
-                city: 'Marlins', bg: '#00A3E0', 
-                logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/fd/Marlins_Team_Logo.svg/1200px-Marlins_Team_Logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/2/26/Miami_Marlins_wordmark.svg'
-            },
-            'MIL': { 
-                city: 'Brewers', bg: '#12284C', 
-                logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/b8/Milwaukee_Brewers_logo.svg/1200px-Milwaukee_Brewers_logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/e/eb/Milwaukee_Brewers_wordmark.svg'
-            },
-            'MIN': { 
-                city: 'Twins', bg: '#0C2340', 
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Minnesota_Twins_logo_%282023%29.svg/1200px-Minnesota_Twins_logo_%282023%29.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/6/64/Minnesota_Twins_wordmark.svg'
-            },
-            'NYM': { 
-                city: 'Mets', bg: '#002D62', 
-                logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/7b/New_York_Mets_Logo.svg/1200px-New_York_Mets_Logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/2/23/New_York_Mets_wordmark.svg'
-            },
-            'NYY': { 
-                city: 'Yankees', bg: '#0C2340', 
-                logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/70/New_York_Yankees_logo.svg/1200px-New_York_Yankees_logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/d/de/New_York_Yankees_wordmark.svg'
-            },
-            'OAK': { 
-                city: 'Athletics', bg: '#004831', 
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Oakland_A%27s_Logo.svg/1200px-Oakland_A%27s_Logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/5/5c/Oakland_Athletics_wordmark.svg'
-            },
-            'PHI': { 
-                city: 'Phillies', bg: '#E81828', 
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Philadelphia_Phillies_Insignia.svg/1200px-Philadelphia_Phillies_Insignia.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/a/a3/Philadelphia_Phillies_wordmark.svg'
-            },
-            'PIT': { 
-                city: 'Pirates', bg: '#FDB827', 
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Pittsburgh_Pirates_Logo.svg/1200px-Pittsburgh_Pirates_Logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/2/25/Pittsburgh_Pirates_wordmark.svg'
-            },
-            'SD':  { 
-                city: 'Padres', bg: '#2F241D', 
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/SD_Padres_Logo.svg/1200px-SD_Padres_Logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/a/a4/San_Diego_Padres_wordmark.svg'
-            },
-            'SF':  { 
-                city: 'Giants', bg: '#FD5A1E', 
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/San_Francisco_Giants_Logo.svg/1200px-San_Francisco_Giants_Logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/d/df/San_Francisco_Giants_wordmark.svg'
-            },
-            'SEA': { 
-                city: 'Mariners', bg: '#0C2C56', 
-                logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/b0/Seattle_Mariners_logo.svg/1200px-Seattle_Mariners_logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/e/ea/Seattle_Mariners_wordmark.svg'
-            },
-            'STL': { 
-                city: 'Cardinals', bg: '#C41D3B', 
-                logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/9/9d/St._Louis_Cardinals_logo.svg/1200px-St._Louis_Cardinals_logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/f/f6/St._Louis_Cardinals_wordmark.svg'
-            },
-            'TBR': { 
-                city: 'Rays', bg: '#092C5C', 
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Tampa_Bay_Rays_Logo.svg/1200px-Tampa_Bay_Rays_Logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/5/52/Tampa_Bay_Rays_wordmark.svg'
-            },
-            'TEX': { 
-                city: 'Rangers', bg: '#003278', 
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Texas_Rangers_Insignia.svg/1200px-Texas_Rangers_Insignia.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/d/df/Texas_Rangers_wordmark.svg'
-            },
-            'TOR': { 
-                city: 'Blue Jays', bg: '#005AC0', 
-                logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/ba/Toronto_Blue_Jays_logo.svg/1200px-Toronto_Blue_Jays_logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/5/52/Toronto_Blue_Jays_wordmark_logo_wide_blue-red.svg'
-            },
-            'WSH': { 
-                city: 'Nationals', bg: '#AB0003', 
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Washington_Nationals_Interlocking_W_Logo.svg/1200px-Washington_Nationals_Interlocking_W_Logo.svg.png',
-                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/2/22/Washington_Nationals_wordmark.svg'
-            }
+            'ARI': { city: 'Arizona', bg: '#A71930', logo: 'https://upload.wikimedia.org/wikipedia/commons/7/7e/Arizona_Diamondbacks_wordmark_logo_teal_01.svg' },
+            'ATL': { city: 'Braves', bg: '#CE1141', logo: 'https://images.ctfassets.net/iiozhi00a8lc/t144_header_primaryATL_LOGO_092019_svg/7c2f3d4d1f352fc7162dd9c765693d4d/t144_header_primary.svg', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Atlanta_Braves_script.svg' },
+            'BAL': { city: 'Orioles', bg: '#DF4601', logo: 'https://upload.wikimedia.org/wikipedia/en/7/75/Baltimore_Orioles_cap.svg', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/b/b8/Baltimore_Orioles_wordmark.svg' },
+            'BOS': { city: 'Red Sox', bg: '#BD3039', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/RedSoxPrimary_HangingSocks.svg/1280px-RedSoxPrimary_HangingSocks.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/6/69/Boston_Red_Sox_load_wordmark.svg' },
+            'CHC': { city: 'Cubs', bg: '#0E3386', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Chicago_Cubs_logo.svg/1200px-Chicago_Cubs_logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/d/de/Chicago_Cubs_wordmark.svg' },
+            'CWS': { city: 'White Sox', bg: '#27251F', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Chicago_White_Sox_No_Border_Logo.svg/1200px-Chicago_White_Sox_No_Border_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/d/d4/Chicago_White_Sox_wordmark.svg' },
+            'CIN': { city: 'Reds', bg: '#C6011F', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Cincinnati_Reds_Logo.svg/1200px-Cincinnati_Cincinnati_Reds_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/3/36/Cincinnati_Reds_wordmark.svg' },
+            'CLE': { city: 'Guardians', bg: '#0C2340', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Cleveland_Guardians_Teardrop_Logo.svg/1200px-Cleveland_Guardians_Teardrop_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Cleveland_Guardians_wordmark.svg' },
+            'COL': { city: 'Rockies', bg: '#333366', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Colorado_Rockies_logo.svg/1200px-Colorado_Rockies_logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Colorado_Rockies_wordmark.svg' },
+            'DET': { city: 'Tigers', bg: '#0C2340', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Detroit_Tigers_Logo.svg/1200px-Detroit_Tigers_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/6/61/Detroit_Tigers_wordmark.svg' },
+            'HOU': { city: 'Astros', bg: '#002D62', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Houston-Astros-Logo.svg/1200px-Houston-Astros-Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Houston_Astros_wordmark.svg' },
+            'KC':  { city: 'Royals', bg: '#004687', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Kansas_City_Royals_Lightning_Logo.svg/1200px-Kansas_City_Royals_Lightning_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/1/13/Kansas_City_Royals_wordmark.svg' },
+            'LAA': { city: 'Angels', bg: '#BA0021', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Los_Angeles_Angels_of_Anaheim_Official_Logo.svg/1200px-Los_Angeles_Angels_of_Anaheim_Official_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/2/23/Los_Angeles_Angels_wordmark.svg' },
+            'LAD': { city: 'Dodgers', bg: '#005A9C', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Los_Angeles_Dodgers_Logo.svg/1200px-Los_Angeles_Dodgers_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/f/f6/Los_Angeles_Dodgers_script.svg' },
+            'MIA': { city: 'Marlins', bg: '#00A3E0', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/fd/Marlins_Team_Logo.svg/1200px-Marlins_Team_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/2/26/Miami_Marlins_wordmark.svg' },
+            'MIL': { city: 'Brewers', bg: '#12284C', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/b8/Milwaukee_Brewers_logo.svg/1200px-Milwaukee_Brewers_logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/e/eb/Milwaukee_Brewers_wordmark.svg' },
+            'MIN': { city: 'Twins', bg: '#0C2340', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Minnesota_Twins_logo_%282023%29.svg/1200px-Minnesota_Twins_logo_%282023%29.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/6/64/Minnesota_Twins_wordmark.svg' },
+            'NYM': { city: 'Mets', bg: '#002D62', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/7b/New_York_Mets_Logo.svg/1200px-New_York_Mets_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/2/23/New_York_Mets_wordmark.svg' },
+            'NYY': { city: 'Yankees', bg: '#0C2340', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/70/New_York_Yankees_logo.svg/1200px-New_York_Yankees_logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/d/de/New_York_Yankees_wordmark.svg' },
+            'OAK': { city: 'Athletics', bg: '#004831', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Oakland_A%27s_Logo.svg/1200px-Oakland_A%27s_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/5/5c/Oakland_Athletics_wordmark.svg' },
+            'PHI': { city: 'Phillies', bg: '#E81828', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Philadelphia_Phillies_Insignia.svg/1200px-Philadelphia_Phillies_Insignia.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/a/a3/Philadelphia_Phillies_wordmark.svg' },
+            'PIT': { city: 'Pirates', bg: '#FDB827', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Pittsburgh_Pirates_Logo.svg/1200px-Pittsburgh_Pirates_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/2/25/Pittsburgh_Pirates_wordmark.svg' },
+            'SD':  { city: 'Padres', bg: '#2F241D', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/SD_Padres_Logo.svg/1200px-SD_Padres_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/a/a4/San_Diego_Padres_wordmark.svg' },
+            'SF':  { city: 'Giants', bg: '#FD5A1E', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/San_Francisco_Giants_Logo.svg/1200px-San_Francisco_Giants_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/d/df/San_Francisco_Giants_wordmark.svg' },
+            'SEA': { city: 'Mariners', bg: '#0C2C56', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/b0/Seattle_Mariners_logo.svg/1200px-Seattle_Mariners_logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/e/ea/Seattle_Mariners_wordmark.svg' },
+            'STL': { city: 'Cardinals', bg: '#C41D3B', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/9/9d/St._Louis_Cardinals_logo.svg/1200px-St._Louis_Cardinals_logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/f/f6/St._Louis_Cardinals_wordmark.svg' },
+            'TBR': { city: 'Rays', bg: '#092C5C', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Tampa_Bay_Rays_Logo.svg/1200px-Tampa_Bay_Rays_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/5/52/Tampa_Bay_Rays_wordmark.svg' },
+            'TEX': { city: 'Rangers', bg: '#003278', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Texas_Rangers_Insignia.svg/1200px-Texas_Rangers_Insignia.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/d/df/Texas_Rangers_wordmark.svg' },
+            'TOR': { city: 'Blue Jays', bg: '#005AC0', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/ba/Toronto_Blue_Jays_logo.svg/1200px-Toronto_Blue_Jays_logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/5/52/Toronto_Blue_Jays_wordmark_logo_wide_blue-red.svg' },
+            'WSH': { city: 'Nationals', bg: '#AB0003', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Washington_Nationals_Interlocking_W_Logo.svg/1200px-Washington_Nationals_Interlocking_W_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/2/22/Washington_Nationals_wordmark.svg' }
         };
 
         const DOM = {
@@ -671,6 +561,56 @@
             bgHome: document.getElementById('bg-home-row'),
             clock: document.getElementById('ui-deck-clock'),
             bases: [document.getElementById('b-1st'), document.getElementById('b-2nd'), document.getElementById('b-3rd')]
+        };
+
+        // Helper function to broadcast state data to OBS
+        function dispatchStateSync(customAction = null) {
+            if (!isOverlayMode) {
+                syncChannel.postMessage({
+                    type: 'STATE_UPDATE',
+                    appState: app,
+                    lineup: {
+                        pitcher: document.getElementById('in-p-name').value,
+                        pitchCount: document.getElementById('in-p-count').value,
+                        batter: document.getElementById('in-b-name').value,
+                        batStats: document.getElementById('in-b-stats').value,
+                        clockVal: document.getElementById('in-clock-val').value,
+                        awayTeam: document.getElementById('sel-away').value,
+                        homeTeam: document.getElementById('sel-home').value
+                    },
+                    triggerAction: customAction
+                });
+            }
+        }
+
+        // Listen for messages inside OBS coming from the web controller
+        syncChannel.onmessage = (event) => {
+            if (event.data.type === 'STATE_UPDATE') {
+                app = event.data.appState;
+                
+                // Sync profiles and inputs
+                document.getElementById('in-p-name').value = event.data.lineup.pitcher;
+                document.getElementById('in-p-count').value = event.data.lineup.pitchCount;
+                document.getElementById('in-b-name').value = event.data.lineup.batter;
+                document.getElementById('in-b-stats').value = event.data.lineup.batStats;
+                document.getElementById('in-clock-val').value = event.data.lineup.clockVal;
+                document.getElementById('sel-away').value = event.data.lineup.awayTeam;
+                document.getElementById('sel-home').value = event.data.lineup.homeTeam;
+
+                loadPresetProfile('away');
+                loadPresetProfile('home');
+                commitLineupSync();
+                setClockValue();
+
+                // Intercept score changes or animation sequences to preserve internal mechanics
+                if (event.data.triggerAction && event.data.triggerAction.name === 'SCORE_SHIFT') {
+                    animateScoreShift(event.data.triggerAction.side, event.data.triggerAction.next, event.data.triggerAction.prev);
+                } else if (event.data.triggerAction && event.data.triggerAction.name === 'HOME_RUN_ANIM') {
+                    executeHRAnimationLogic();
+                }
+
+                render();
+            }
         };
 
         function animateScoreShift(sideKey, incomingVal, oldVal) {
@@ -700,10 +640,10 @@
             for (let i = 0; i < 3; i++) {
                 if (app.fieldBases[i]) {
                     DOM.bases[i].classList.add('active');
-                    document.getElementById(`btn-f${i+1}`).style.backgroundColor = '#ffa500';
+                    if(!isOverlayMode) document.getElementById(`btn-f${i+1}`).style.backgroundColor = '#ffa500';
                 } else {
                     DOM.bases[i].classList.remove('active');
-                    document.getElementById(`btn-f${i+1}`).style.backgroundColor = '#5f6368';
+                    if(!isOverlayMode) document.getElementById(`btn-f${i+1}`).style.backgroundColor = '#5f6368';
                 }
             }
         }
@@ -712,33 +652,39 @@
             app.balls++;
             if (app.balls >= 4) simulateWalk();
             render();
+            dispatchStateSync();
         }
 
         function modifyStrike() {
             app.strikes++;
             if (app.strikes >= 3) simulateStrikeout();
             render();
+            dispatchStateSync();
         }
 
         function modifyOut() {
             app.outs++;
             if (app.outs >= 3) rolloverHalfInning();
             render();
+            dispatchStateSync();
         }
 
         function wipeCount() {
             app.balls = 0; app.strikes = 0;
             render();
+            dispatchStateSync();
         }
 
         function toggleBaseState(baseNum) {
             app.fieldBases[baseNum - 1] = !app.fieldBases[baseNum - 1];
             render();
+            dispatchStateSync();
         }
 
         function clearFieldMap() {
             app.fieldBases = [false, false, false];
             render();
+            dispatchStateSync();
         }
 
         function tweakRunScore(teamKey, amount) {
@@ -747,6 +693,7 @@
                 app.scoreAway = Math.max(0, app.scoreAway + amount);
                 if (current !== app.scoreAway) {
                     animateScoreShift('away', app.scoreAway, current);
+                    dispatchStateSync({ name: 'SCORE_SHIFT', side: 'away', next: app.scoreAway, prev: current });
                 }
             }
             if (teamKey === 'home') {
@@ -754,6 +701,7 @@
                 app.scoreHome = Math.max(0, app.scoreHome + amount);
                 if (current !== app.scoreHome) {
                     animateScoreShift('home', app.scoreHome, current);
+                    dispatchStateSync({ name: 'SCORE_SHIFT', side: 'home', next: app.scoreHome, prev: current });
                 }
             }
             render();
@@ -783,60 +731,71 @@
                 if (startField[2]) runsEarned++;
             }
 
+            let oldAway = app.scoreAway;
+            let oldHome = app.scoreHome;
+
             app.fieldBases = endField;
             if (runsEarned > 0) {
                 if (app.isTop) {
-                    let oldScore = app.scoreAway;
                     app.scoreAway += runsEarned;
-                    animateScoreShift('away', app.scoreAway, oldScore);
+                    animateScoreShift('away', app.scoreAway, oldAway);
+                    dispatchStateSync({ name: 'SCORE_SHIFT', side: 'away', next: app.scoreAway, prev: oldAway });
                 } else {
-                    let oldScore = app.scoreHome;
                     app.scoreHome += runsEarned;
-                    animateScoreShift('home', app.scoreHome, oldScore);
+                    animateScoreShift('home', app.scoreHome, oldHome);
+                    dispatchStateSync({ name: 'SCORE_SHIFT', side: 'home', next: app.scoreHome, prev: oldHome });
                 }
             }
 
             wipeCount();
+            dispatchStateSync();
         }
 
         function simulateWalk() {
             app.pitchCount++;
+            let oldAway = app.scoreAway;
+            let oldHome = app.scoreHome;
+
             if (!app.fieldBases[0]) { app.fieldBases[0] = true; } 
             else if (!app.fieldBases[1]) { app.fieldBases[1] = true; } 
             else if (!app.fieldBases[2]) { app.fieldBases[2] = true; } 
             else {
                 if (app.isTop) {
-                    let oldScore = app.scoreAway;
                     app.scoreAway++;
-                    animateScoreShift('away', app.scoreAway, oldScore);
+                    animateScoreShift('away', app.scoreAway, oldAway);
+                    dispatchStateSync({ name: 'SCORE_SHIFT', side: 'away', next: app.scoreAway, prev: oldAway });
                 } else {
-                    let oldScore = app.scoreHome;
                     app.scoreHome++;
-                    animateScoreShift('home', app.scoreHome, oldScore);
+                    animateScoreShift('home', app.scoreHome, oldHome);
+                    dispatchStateSync({ name: 'SCORE_SHIFT', side: 'home', next: app.scoreHome, prev: oldHome });
                 }
             }
             wipeCount();
+            dispatchStateSync();
         }
 
         function simulateStrikeout() {
             app.pitchCount++;
             modifyOut();
             wipeCount();
+            dispatchStateSync();
         }
 
         function rolloverHalfInning() {
-            app.outs = 0; wipeCount(); clearFieldMap(); shiftHalfInning();
+            app.outs = 0; app.balls = 0; app.strikes = 0; app.fieldBases = [false, false, false]; shiftHalfInning();
         }
 
         function shiftHalfInning() {
             if (app.isTop) app.isTop = false;
             else { app.isTop = true; app.inning++; }
             render();
+            dispatchStateSync();
         }
 
         function initializeTeamSelectors() {
             const selectAway = document.getElementById('sel-away');
             const selectHome = document.getElementById('sel-home');
+            if(!selectAway || !selectHome) return;
             
             Object.keys(mlbDatabase).sort().forEach(key => {
                 let optA = document.createElement('option');
@@ -856,11 +815,10 @@
             const config = mlbDatabase[code];
             if (teamSlot === 'away') {
                 DOM.lblAway.textContent = code; DOM.bgAway.style.backgroundColor = config.bg;
-                document.getElementById('scroller-away').innerHTML = `<span>${app.scoreAway}</span>`;
             } else {
                 DOM.lblHome.textContent = code; DOM.bgHome.style.backgroundColor = config.bg;
-                document.getElementById('scroller-home').innerHTML = `<span>${app.scoreHome}</span>`;
             }
+            if(!isOverlayMode) dispatchStateSync();
         }
 
         function commitLineupSync() {
@@ -869,15 +827,49 @@
             DOM.batter.textContent = document.getElementById('in-b-name').value.toUpperCase();
             DOM.batStats.textContent = document.getElementById('in-b-stats').value;
             render();
+            if(!isOverlayMode) dispatchStateSync();
         }
 
-        function setClockValue() { DOM.clock.textContent = document.getElementById('in-clock-val').value; }
+        function setClockValue() { 
+            DOM.clock.textContent = document.getElementById('in-clock-val').value; 
+            if(!isOverlayMode) dispatchStateSync();
+        }
 
         function toggleDeck(id) {
             const element = document.getElementById(id);
             if (id === 'ui-deck-top') element.classList.toggle('collapsed');
             else if (id === 'ui-deck-clock') element.classList.toggle('collapsed');
             else element.classList.toggle('invisible');
+            
+            // Send simple interface state updates over the hook channel
+            if(!isOverlayMode) {
+                syncChannel.postMessage({ type: 'UI_TOGGLE', elementId: id });
+            }
+        }
+        
+        // Handle UI toggles directly inside OBS window
+        if(isOverlayMode) {
+            syncChannel.onmessage = (orig) => {
+                if(orig.data.type === 'UI_TOGGLE') {
+                    const el = document.getElementById(orig.data.elementId);
+                    if (orig.data.elementId === 'ui-deck-top' || orig.data.elementId === 'ui-deck-clock') el.classList.toggle('collapsed');
+                    else el.classList.toggle('invisible');
+                } else if (orig.data.type === 'STATE_UPDATE') {
+                    app = orig.data.appState;
+                    DOM.pitcher.textContent = orig.data.lineup.pitcher.toUpperCase();
+                    DOM.batter.textContent = orig.data.lineup.batter.toUpperCase();
+                    DOM.batStats.textContent = orig.data.lineup.batStats;
+                    document.getElementById('sel-away').value = orig.data.lineup.awayTeam;
+                    document.getElementById('sel-home').value = orig.data.lineup.homeTeam;
+                    loadPresetProfile('away'); loadPresetProfile('home');
+                    if (orig.data.triggerAction && orig.data.triggerAction.name === 'SCORE_SHIFT') {
+                        animateScoreShift(orig.data.triggerAction.side, orig.data.triggerAction.next, orig.data.triggerAction.prev);
+                    } else if (orig.data.triggerAction && orig.data.triggerAction.name === 'HOME_RUN_ANIM') {
+                        executeHRAnimationLogic();
+                    }
+                    render();
+                }
+            }
         }
 
         function terminateAndResetGame() {
@@ -886,9 +878,16 @@
             document.getElementById('sel-home').value = 'TOR';
             loadPresetProfile('away'); loadPresetProfile('home');
             render();
+            dispatchStateSync();
         }
 
         function launchHomeRunSequence() {
+            if(isOverlayMode) return;
+            dispatchStateSync({ name: 'HOME_RUN_ANIM' });
+            executeHRAnimationLogic();
+        }
+
+        function executeHRAnimationLogic() {
             app.pitchCount++;
             let activeOnBase = 0;
             app.fieldBases.forEach(b => { if(b) activeOnBase++; });
@@ -911,20 +910,9 @@
             logoContainer.innerHTML = `<img id="hr-watermark-img" src="${runProfile.logo}" alt="Team Watermark">`;
             
             const watermarkImg = document.getElementById('hr-watermark-img');
-            if (runProfile && runProfile.logoOffset) {
-                let custom = runProfile.logoOffset;
-                let scaleVal = custom.scale !== undefined ? custom.scale : 260;
-                let offsetX = custom.x !== undefined ? custom.x : 0;
-                let offsetY = custom.y !== undefined ? custom.y : 0;
-                
-                watermarkImg.style.width = `${scaleVal}%`;
-                watermarkImg.style.height = `${scaleVal}%`;
-                watermarkImg.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`;
-            } else {
-                watermarkImg.style.width = '260%';
-                watermarkImg.style.height = '260%';
-                watermarkImg.style.transform = 'translate(-50%, -50%)';
-            }
+            watermarkImg.style.width = '260%';
+            watermarkImg.style.height = '260%';
+            watermarkImg.style.transform = 'translate(-50%, -50%)';
 
             if (runProfile && runProfile.wordmark) {
                 teamText.removeAttribute('style'); 
@@ -954,9 +942,7 @@
                 teamText.style.animation = 'scaleInFast 0.3s forwards cubic-bezier(0.17, 0.67, 0.6, 1)';
             }, 100);
 
-            setTimeout(() => {
-                teamText.style.animation = 'scaleOutSlow 0.2s forwards ease-in';
-            }, 1300);
+            setTimeout(() => { teamText.style.animation = 'scaleOutSlow 0.2s forwards ease-in'; }, 1300);
 
             setTimeout(() => {
                 teamText.style.display = 'none';
@@ -964,9 +950,7 @@
                 typeText.style.animation = 'scaleInPop 0.35s forwards cubic-bezier(0, 0, 0.2, 1)';
             }, 1500);
 
-            setTimeout(() => {
-                overlay.style.animation = 'bugFadeOut 0.3s forwards ease-out';
-            }, 3400);
+            setTimeout(() => { overlay.style.animation = 'bugFadeOut 0.3s forwards ease-out'; }, 3400);
 
             setTimeout(() => {
                 typeText.style.display = 'none';
@@ -985,8 +969,9 @@
                     animateScoreShift('home', app.scoreHome, oldScore);
                 }
 
-                clearFieldMap(); 
-                wipeCount();
+                app.fieldBases = [false, false, false];
+                app.balls = 0; app.strikes = 0;
+                render();
             }, 3700);
         }
 
