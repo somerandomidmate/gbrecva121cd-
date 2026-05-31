@@ -495,12 +495,10 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
-        // === CONFIGURATION: REPLACE THESE WITH YOUR COPIED SUPABASE CREDENTIALS ===
+        // === CONFIGURATION ===
         const SUPABASE_URL = "https://saahgumsxrxiunhhumek.supabase.co/rest/v1/";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhYWhndW1zeHJ4aXVuaGh1bWVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxOTA3OTgsImV4cCI6MjA5NTc2Njc5OH0.K4olnMI4RbFkLSaMPb584mekrZ0cb3jop4T2kgWJ8lk";
-        // =========================================================================
 
-        // Initialize the Supabase Client
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let app = {
@@ -511,17 +509,14 @@
             fieldBases: [false, false, false]
         };
 
-        // Create a cloud real-time channel named 'scorebug_sync'
         const syncChannel = supabaseClient.channel('scorebug_sync');
 
-        // Check if this instance is the OBS Overlay or the Controller
         const urlParams = new URLSearchParams(window.location.search);
         const isOverlayMode = urlParams.get('view') === 'overlay';
 
-        // If it's the overlay, hide the control panel instantly
         if (isOverlayMode) {
             document.querySelector('.workbench').style.display = 'none';
-            document.body.style.backgroundColor = 'transparent'; // Transparent background for OBS
+            document.body.style.backgroundColor = 'transparent';
         }
 
         const mlbDatabase = {
@@ -574,7 +569,6 @@
             bases: [document.getElementById('b-1st'), document.getElementById('b-2nd'), document.getElementById('b-3rd')]
         };
 
-        // Network broadcasting broadcast call
         function dispatchStateSync(customAction = null) {
             if (!isOverlayMode) {
                 syncChannel.send({
@@ -596,39 +590,6 @@
                 });
             }
         }
-
-        // Connect to real-time events pipeline
-        syncChannel
-            .on('broadcast', { event: 'STATE_UPDATE' }, ({ payload }) => {
-                app = payload.appState;
-                
-                document.getElementById('in-p-name').value = payload.lineup.pitcher;
-                document.getElementById('in-p-count').value = payload.lineup.pitchCount;
-                document.getElementById('in-b-name').value = payload.lineup.batter;
-                document.getElementById('in-b-stats').value = payload.lineup.batStats;
-                document.getElementById('in-clock-val').value = payload.lineup.clockVal;
-                document.getElementById('sel-away').value = payload.lineup.awayTeam;
-                document.getElementById('sel-home').value = payload.lineup.homeTeam;
-
-                loadPresetProfile('away');
-                loadPresetProfile('home');
-                commitLineupSync();
-                setClockValue();
-
-                if (payload.triggerAction && payload.triggerAction.name === 'SCORE_SHIFT') {
-                    animateScoreShift(payload.triggerAction.side, payload.triggerAction.next, payload.triggerAction.prev);
-                } else if (payload.triggerAction && payload.triggerAction.name === 'HOME_RUN_ANIM') {
-                    executeHRAnimationLogic();
-                }
-
-                render();
-            })
-            .on('broadcast', { event: 'UI_TOGGLE' }, ({ payload }) => {
-                const el = document.getElementById(payload.elementId);
-                if (payload.elementId === 'ui-deck-top' || payload.elementId === 'ui-deck-clock') el.classList.toggle('collapsed');
-                else el.classList.toggle('invisible');
-            })
-            .subscribe();
 
         function animateScoreShift(sideKey, incomingVal, oldVal) {
             const container = document.getElementById(`scroller-${sideKey}`);
@@ -765,7 +726,6 @@
             }
 
             wipeCount();
-            dispatchStateSync();
         }
 
         function simulateWalk() {
@@ -788,14 +748,12 @@
                 }
             }
             wipeCount();
-            dispatchStateSync();
         }
 
         function simulateStrikeout() {
             app.pitchCount++;
             modifyOut();
             wipeCount();
-            dispatchStateSync();
         }
 
         function rolloverHalfInning() {
@@ -828,7 +786,9 @@
         }
 
         function loadPresetProfile(teamSlot) {
-            const code = document.getElementById(`sel-${teamSlot}`).value;
+            const selector = document.getElementById(`sel-${teamSlot}`);
+            if (!selector || !selector.value) return;
+            const code = selector.value;
             const config = mlbDatabase[code];
             if (teamSlot === 'away') {
                 DOM.lblAway.textContent = code; DOM.bgAway.style.backgroundColor = config.bg;
@@ -854,8 +814,7 @@
 
         function toggleDeck(id) {
             const element = document.getElementById(id);
-            if (id === 'ui-deck-top') element.classList.toggle('collapsed');
-            else if (id === 'ui-deck-clock') element.classList.toggle('collapsed');
+            if (id === 'ui-deck-top' || id === 'ui-deck-clock') element.classList.toggle('collapsed');
             else element.classList.toggle('invisible');
             
             if(!isOverlayMode) {
@@ -901,6 +860,7 @@
             logoContainer.innerHTML = `<img id="hr-watermark-img" src="${runProfile.logo}" alt="Team Watermark">`;
             
             const watermarkImg = document.getElementById('hr-watermark-img');
+            watermarkImg.style.position = 'absolute';
             watermarkImg.style.width = '260%';
             watermarkImg.style.height = '260%';
             watermarkImg.style.transform = 'translate(-50%, -50%)';
@@ -966,10 +926,44 @@
             }, 3700);
         }
 
+        // --- SAFE INITIALIZATION TREE ---
         initializeTeamSelectors();
         loadPresetProfile('away');
         loadPresetProfile('home');
         render();
+
+        // Connect channels after building DOM selectors
+        syncChannel
+            .on('broadcast', { event: 'STATE_UPDATE' }, ({ payload }) => {
+                app = payload.appState;
+                
+                document.getElementById('in-p-name').value = payload.lineup.pitcher;
+                document.getElementById('in-p-count').value = payload.lineup.pitchCount;
+                document.getElementById('in-b-name').value = payload.lineup.batter;
+                document.getElementById('in-b-stats').value = payload.lineup.batStats;
+                document.getElementById('in-clock-val').value = payload.lineup.clockVal;
+                document.getElementById('sel-away').value = payload.lineup.awayTeam;
+                document.getElementById('sel-home').value = payload.lineup.homeTeam;
+
+                loadPresetProfile('away');
+                loadPresetProfile('home');
+                commitLineupSync();
+                setClockValue();
+
+                if (payload.triggerAction && payload.triggerAction.name === 'SCORE_SHIFT') {
+                    animateScoreShift(payload.triggerAction.side, payload.triggerAction.next, payload.triggerAction.prev);
+                } else if (payload.triggerAction && payload.triggerAction.name === 'HOME_RUN_ANIM') {
+                    executeHRAnimationLogic();
+                }
+
+                render();
+            })
+            .on('broadcast', { event: 'UI_TOGGLE' }, ({ payload }) => {
+                const el = document.getElementById(payload.elementId);
+                if (payload.elementId === 'ui-deck-top' || payload.elementId === 'ui-deck-clock') el.classList.toggle('collapsed');
+                else el.classList.toggle('invisible');
+            })
+            .subscribe();
     </script>
 </body>
 </html>
