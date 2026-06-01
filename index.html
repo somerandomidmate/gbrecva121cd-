@@ -217,6 +217,10 @@
         
         .inn-slot { width: 74px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
         .arrow-dir { font-size: 13px; margin-right: 3px; font-weight: 900; }
+        .clock-slot.collapsed { width: 0px !important; opacity: 0 !important; overflow: hidden; }
+        
+        .inn-slot { width: 74px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .arrow-dir { font-size: 13px; margin-right: 3px; font-weight: 900; }
         .count-slot { flex-grow: 1; text-align: center; font-size: 18px; letter-spacing: 0.5px; }
         .outs-slot { width: 84px; text-align: center; font-size: 18px; }
 
@@ -354,74 +358,61 @@
         button.control-toggle { background-color: #5f6368; }
         button.control-toggle:hover { background-color: #4c4f52; }
         
-        input[type="text"] {
+        input[type="text"], select {
             background-color: #131416; color: white; border: 1px solid #5f6368; padding: 6px; border-radius: 4px; font-size: 13px; font-weight: 700;
         }
 
-        /* --- NEW TEAM MATRIX CONTROLS --- */
-        .team-matrix-container {
+        /* --- TEAM BUTTON SELECTOR REPLACEMENT GRID --- */
+        .team-grid-container {
+            width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            width: 100%;
-            background-color: #17181a;
+            gap: 8px;
+            margin-top: 4px;
+            background: #131416;
             padding: 12px;
             border-radius: 6px;
-            border: 1px solid #2a2b2d;
+            border: 1px solid #323336;
         }
-        .matrix-axis {
+        .team-selection-row {
             display: flex;
             align-items: center;
             gap: 10px;
         }
-        .axis-label {
-            font-size: 12px;
+        .team-selection-row .row-label {
+            font-size: 11px;
             font-weight: 900;
-            color: #fff;
             width: 50px;
+            color: #fff;
             text-transform: uppercase;
+            letter-spacing: 1px;
         }
-        .matrix-grid {
+        .team-btn-wrap {
             display: flex;
             flex-wrap: wrap;
             gap: 4px;
             flex-grow: 1;
         }
-        .team-badge {
-            background-color: #2c2e31;
-            color: #d1d5db;
-            border: 1px solid #3f4246;
-            padding: 3px 6px;
+        .team-select-btn {
+            background-color: #2a2b2d;
+            color: #9aa0a6;
+            border: 1px solid #3c4043;
+            padding: 4px 8px;
             font-size: 11px;
             font-weight: 800;
             border-radius: 3px;
             cursor: pointer;
-            transition: all 0.1s ease;
+            text-transform: uppercase;
+            transition: all 0.15s ease;
         }
-        .team-badge:hover {
-            background-color: #3f4246;
+        .team-select-btn:hover {
             color: #fff;
+            border-color: #5f6368;
         }
-        .team-badge.active-away {
-            background-color: #d93025;
+        .team-select-btn.selected-active {
             color: #fff;
-            border-color: #ff6b6b;
-            box-shadow: 0 0 6px rgba(217, 48, 37, 0.5);
-        }
-        .team-badge.active-home {
-            background-color: #1a73e8;
-            color: #fff;
-            border-color: #66a3ff;
-            box-shadow: 0 0 6px rgba(26, 115, 232, 0.5);
-        }
-        .league-split-title {
-            font-size: 10px;
-            color: #5f6368;
-            font-weight: 800;
-            width: 100%;
-            margin: 4px 0 2px 0;
-            border-bottom: 1px dashed #2a2b2d;
-            padding-bottom: 2px;
+            border-color: #fff;
+            box-shadow: 0 0 6px rgba(255,255,255,0.2);
         }
     </style>
 </head>
@@ -477,7 +468,7 @@
                 </div>
                 
                 <div class="network-box">
-                    <img src="https://static.wikia.nocookie.net/logopedia/images/d/d8/Sportsnet_2011_short.svg/revision/latest?cb=20230828131223" alt="Sportsnet">
+                    <img src="kifia/Sportsnet_2011_short.png" alt="Sportsnet">
                 </div>
             </div>
 
@@ -523,17 +514,15 @@
         </div>
 
         <div class="row-group">
-            <label>MLB Team Profile Quick-Select Matrix</label>
-            <div class="team-matrix-container">
-                <!-- Away Team Row Selection Matrix -->
-                <div class="matrix-axis">
-                    <div class="axis-label" style="color: #ff6b6b;">Away (★)</div>
-                    <div class="matrix-grid" id="matrix-away-slots"></div>
+            <label>MLB Team Profile Configuration Engine</label>
+            <div class="team-grid-container">
+                <div class="team-selection-row">
+                    <span class="row-label" style="color: #64b5f6;">Away:</span>
+                    <div class="team-btn-wrap" id="wrap-away-teams"></div>
                 </div>
-                <!-- Home Team Row Selection Matrix -->
-                <div class="matrix-axis">
-                    <div class="axis-label" style="color: #66a3ff;">Home (🏠)</div>
-                    <div class="matrix-grid" id="matrix-home-slots"></div>
+                <div class="team-selection-row">
+                    <span class="row-label" style="color: #ffb74d;">Home:</span>
+                    <div class="team-btn-wrap" id="wrap-home-teams"></div>
                 </div>
             </div>
         </div>
@@ -573,48 +562,164 @@
             inning: 1, isTop: true,
             pitchCount: 0,
             fieldBases: [false, false, false],
-            currentAwayCode: 'TEX',
-            currentHomeCode: 'TOR'
+            currentAway: 'TEX',
+            currentHome: 'TOR'
         };
 
         const mlbDatabase = {
-            // AL EAST
-            'BAL': { city: 'Orioles', bg: '#DF4601', league: 'AL', logo: 'https://upload.wikimedia.org/wikipedia/en/7/75/Baltimore_Orioles_cap.svg', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/b/b8/Baltimore_Orioles_wordmark.svg' },
-            'BOS': { city: 'Red Sox', bg: '#BD3039', league: 'AL', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/RedSoxPrimary_HangingSocks.svg/1280px-RedSoxPrimary_HangingSocks.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/6/69/Boston_Red_Sox_load_wordmark.svg' },
-            'NYY': { city: 'Yankees', bg: '#0C2340', league: 'AL', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/70/New_York_Yankees_logo.svg/1200px-New_York_Yankees_logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/d/de/New_York_Yankees_wordmark.svg' },
-            'TBR': { city: 'Rays', bg: '#092C5C', league: 'AL', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Tampa_Bay_Rays_Logo.svg/1200px-Tampa_Bay_Rays_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/5/52/Tampa_Bay_Rays_wordmark.svg' },
-            'TOR': { city: 'Blue Jays', bg: '#005AC0', league: 'AL', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/ba/Toronto_Blue_Jays_logo.svg/1200px-Toronto_Blue_Jays_logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/5/52/Toronto_Blue_Jays_wordmark_logo_wide_blue-red.svg' },
-            // AL CENTRAL
-            'CWS': { city: 'White Sox', bg: '#27251F', league: 'AL', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Chicago_White_Sox_No_Border_Logo.svg/1200px-Chicago_White_Sox_No_Border_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/d/d4/Chicago_White_Sox_wordmark.svg' },
-            'CLE': { city: 'Guardians', bg: '#0C2340', league: 'AL', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Cleveland_Guardians_Teardrop_Logo.svg/1200px-Cleveland_Guardians_Teardrop_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Cleveland_Guardians_wordmark.svg' },
-            'DET': { city: 'Tigers', bg: '#0C2340', league: 'AL', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Detroit_Tigers_Logo.svg/1200px-Detroit_Tigers_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/6/61/Detroit_Tigers_wordmark.svg' },
-            'KC':  { city: 'Royals', bg: '#004687', league: 'AL', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Kansas_City_Royals_Lightning_Logo.svg/1200px-Kansas_City_Royals_Lightning_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/1/13/Kansas_City_Royals_wordmark.svg' },
-            'MIN': { city: 'Twins', bg: '#0C2340', league: 'AL', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Minnesota_Twins_logo_%282023%29.svg/1200px-Minnesota_Twins_logo_%282023%29.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/6/64/Minnesota_Twins_wordmark.svg' },
-            // AL WEST
-            'HOU': { city: 'Astros', bg: '#002D62', league: 'AL', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Houston-Astros-Logo.svg/1200px-Houston-Astros-Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Houston_Astros_wordmark.svg' },
-            'LAA': { city: 'Angels', bg: '#BA0021', league: 'AL', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Los_Angeles_Angels_of_Anaheim_Official_Logo.svg/1200px-Los_Angeles_Angels_of_Anaheim_Official_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/2/23/Los_Angeles_Angels_wordmark.svg' },
-            'OAK': { city: 'Athletics', bg: '#004831', league: 'AL', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Oakland_A%27s_Logo.svg/1200px-Oakland_A%27s_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/5/5c/Oakland_Athletics_wordmark.svg' },
-            'SEA': { city: 'Mariners', bg: '#0C2C56', league: 'AL', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/b0/Seattle_Mariners_logo.svg/1200px-Seattle_Mariners_logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/e/ea/Seattle_Mariners_wordmark.svg' },
-            'TEX': { city: 'Rangers', bg: '#003278', league: 'AL', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Texas_Rangers_Insignia.svg/1200px-Texas_Rangers_Insignia.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/d/df/Texas_Rangers_wordmark.svg' },
-            
-            // NL EAST
-            'ATL': { city: 'Braves', bg: '#CE1141', league: 'NL', logo: 'https://images.ctfassets.net/iiozhi00a8lc/t144_header_primaryATL_LOGO_092019_svg/7c2f3d4d1f352fc7162dd9c765693d4d/t144_header_primary.svg', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Atlanta_Braves_script.svg', logoOffset: { scale: 255, x: -25, y: -35 } },
-            'MIA': { city: 'Marlins', bg: '#00A3E0', league: 'NL', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/fd/Marlins_Team_Logo.svg/1200px-Marlins_Team_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/2/26/Miami_Marlins_wordmark.svg' },
-            'NYM': { city: 'Mets', bg: '#002D62', league: 'NL', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/7b/New_York_Mets_Logo.svg/1200px-New_York_Mets_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/2/23/New_York_Mets_wordmark.svg' },
-            'PHI': { city: 'Phillies', bg: '#E81828', league: 'NL', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Philadelphia_Phillies_Insignia.svg/1200px-Philadelphia_Phillies_Insignia.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/a/a3/Philadelphia_Phillies_wordmark.svg' },
-            'WSH': { city: 'Nationals', bg: '#AB0003', league: 'NL', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Washington_Nationals_Interlocking_W_Logo.svg/1200px-Washington_Nationals_Interlocking_W_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/2/22/Washington_Nationals_wordmark.svg' },
-            // NL CENTRAL
-            'CHC': { city: 'Cubs', bg: '#0E3386', league: 'NL', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Chicago_Cubs_logo.svg/1200px-Chicago_Cubs_logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/d/de/Chicago_Cubs_wordmark.svg' },
-            'CIN': { city: 'Reds', bg: '#C6011F', league: 'NL', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Cincinnati_Reds_Logo.svg/1200px-Cincinnati_Cincinnati_Reds_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/3/36/Cincinnati_Reds_wordmark.svg' },
-            'MIL': { city: 'Brewers', bg: '#12284C', league: 'NL', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/b8/Milwaukee_Brewers_logo.svg/1200px-Milwaukee_Brewers_logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/e/eb/Milwaukee_Brewers_wordmark.svg' },
-            'PIT': { city: 'Pirates', bg: '#FDB827', league: 'NL', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Pittsburgh_Pirates_Logo.svg/1200px-Pittsburgh_Pirates_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/2/25/Pittsburgh_Pirates_wordmark.svg' },
-            'STL': { city: 'Cardinals', bg: '#C41D3B', league: 'NL', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/9/9d/St._Louis_Cardinals_logo.svg/1200px-St._Louis_Cardinals_logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/f/f6/St._Louis_Cardinals_wordmark.svg' },
-            // NL WEST
-            'ARI': { city: 'Arizona', bg: '#A71930', league: 'NL', logo: 'Arizona_Diamondbacks_logo_teadl.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/7/7e/Arizona_Diamondbacks_wordmark_logo_teal_01.svg', logoOffset: { scale: 255, x: -25, y: -35 }, wordmarkOffset: { scale: 50, x: 0, y: 0 } },
-            'COL': { city: 'Rockies', bg: '#333366', league: 'NL', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Colorado_Rockies_logo.svg/1200px-Colorado_Rockies_logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Colorado_Rockies_wordmark.svg' },
-            'LAD': { city: 'Dodgers', bg: '#005A9C', league: 'NL', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Los_Angeles_Dodgers_Logo.svg/1200px-Los_Angeles_Dodgers_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/f/f6/Los_Angeles_Dodgers_script.svg' },
-            'SD':  { city: 'Padres', bg: '#2F241D', league: 'NL', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/SD_Padres_Logo.svg/1200px-SD_Padres_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/a/a4/San_Diego_Padres_wordmark.svg' },
-            'SF':  { city: 'Giants', bg: '#FD5A1E', league: 'NL', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/San_Francisco_Giants_Logo.svg/1200px-San_Francisco_Giants_Logo.svg.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/d/df/San_Francisco_Giants_wordmark.svg' }
+            'ARI': { 
+                city: 'Arizona', bg: '#A71930', 
+                logo: 'kifia/rwNa/Arizona%20Diamondbacks%20logo.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/7/7e/Arizona_Diamondbacks_wordmark_logo_teal_01.svg',
+                logoOffset: { scale: 255, x: -25, y: -35 },
+                wordmarkOffset: { scale: 50, x: 0, y: 0 }
+            },
+            'ATL': { 
+                city: 'Braves', bg: '#012853', 
+                logo: 'kifia/rwNa/Atlanta%20Braves%20logo.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Atlanta_Braves_script.svg',
+                logoOffset: { scale: 255, x: -25, y: -35 },
+            },
+            'BAL': { 
+                city: 'Orioles', bg: '#DF4601', 
+                logo: 'https://upload.wikimedia.org/wikipedia/en/7/75/Baltimore_Orioles_cap.svg',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/b/b8/Baltimore_Orioles_wordmark.svg'
+            },
+            'BOS': { 
+                city: 'Red Sox', bg: '#BD3039', 
+                logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/6/6d/RedSoxPrimary_HangingSocks.svg/1280px-RedSoxPrimary_HangingSocks.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/6/69/Boston_Red_Sox_load_wordmark.svg'
+            },
+            'CHC': { 
+                city: 'Cubs', bg: '#0E3386', 
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Chicago_Cubs_logo.svg/1200px-Chicago_Cubs_logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/d/de/Chicago_Cubs_wordmark.svg'
+            },
+            'CWS': { 
+                city: 'White Sox', bg: '#27251F', 
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Chicago_White_Sox_No_Border_Logo.svg/1200px-Chicago_White_Sox_No_Border_Logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/d/d4/Chicago_White_Sox_wordmark.svg'
+            },
+            'CIN': { 
+                city: 'Reds', bg: '#C6011F', 
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Cincinnati_Reds_Logo.svg/1200px-Cincinnati_Cincinnati_Reds_Logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/3/36/Cincinnati_Reds_wordmark.svg'
+            },
+            'CLE': { 
+                city: 'Guardians', bg: '#0C2340', 
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Cleveland_Guardians_Teardrop_Logo.svg/1200px-Cleveland_Guardians_Teardrop_Logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Cleveland_Guardians_wordmark.svg'
+            },
+            'COL': { 
+                city: 'Rockies', bg: '#333366', 
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Colorado_Rockies_logo.svg/1200px-Colorado_Rockies_logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Colorado_Rockies_wordmark.svg'
+            },
+            'DET': { 
+                city: 'Tigers', bg: '#0C2340', 
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Detroit_Tigers_Logo.svg/1200px-Detroit_Tigers_Logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/6/61/Detroit_Tigers_wordmark.svg'
+            },
+            'HOU': { 
+                city: 'Astros', bg: '#002D62', 
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Houston-Astros-Logo.svg/1200px-Houston-Astros-Logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Houston_Astros_wordmark.svg'
+            },
+            'KC':  { 
+                city: 'Royals', bg: '#004687', 
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Kansas_City_Royals_Lightning_Logo.svg/1200px-Kansas_City_Royals_Lightning_Logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/1/13/Kansas_City_Royals_wordmark.svg'
+            },
+            'LAA': { 
+                city: 'Angels', bg: '#BA0021', 
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Los_Angeles_Angels_of_Anaheim_Official_Logo.svg/1200px-Los_Angeles_Angels_of_Anaheim_Official_Logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/2/23/Los_Angeles_Angels_wordmark.svg'
+            },
+            'LAD': { 
+                city: 'Dodgers', bg: '#005A9C', 
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Los_Angeles_Dodgers_Logo.svg/1200px-Los_Angeles_Dodgers_Logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/f/f6/Los_Angeles_Dodgers_script.svg'
+            },
+            'MIA': { 
+                city: 'Marlins', bg: '#00A3E0', 
+                logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/fd/Marlins_Team_Logo.svg/1200px-Marlins_Team_Logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/2/26/Miami_Marlins_wordmark.svg'
+            },
+            'MIL': { 
+                city: 'Brewers', bg: '#12284C', 
+                logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/b8/Milwaukee_Brewers_logo.svg/1200px-Milwaukee_Brewers_logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/e/eb/Milwaukee_Brewers_wordmark.svg'
+            },
+            'MIN': { 
+                city: 'Twins', bg: '#0C2340', 
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Minnesota_Twins_logo_%282023%29.svg/1200px-Minnesota_Twins_logo_%282023%29.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/6/64/Minnesota_Twins_wordmark.svg'
+            },
+            'NYM': { 
+                city: 'Mets', bg: '#002D62', 
+                logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/7b/New_York_Mets_Logo.svg/1200px-New_York_Mets_Logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/2/23/New_York_Mets_wordmark.svg'
+            },
+            'NYY': { 
+                city: 'Yankees', bg: '#0C2340', 
+                logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/70/New_York_Yankees_logo.svg/1200px-New_York_Yankees_logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/d/de/New_York_Yankees_wordmark.svg'
+            },
+            'OAK': { 
+                city: 'Athletics', bg: '#004831', 
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Oakland_A%27s_Logo.svg/1200px-Oakland_A%27s_Logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/5/5c/Oakland_Athletics_wordmark.svg'
+            },
+            'PHI': { 
+                city: 'Phillies', bg: '#E81828', 
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Philadelphia_Phillies_Insignia.svg/1200px-Philadelphia_Phillies_Insignia.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/a/a3/Philadelphia_Phillies_wordmark.svg'
+            },
+            'PIT': { 
+                city: 'Pirates', bg: '#FDB827', 
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Pittsburgh_Pirates_Logo.svg/1200px-Pittsburgh_Pirates_Logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/2/25/Pittsburgh_Pirates_wordmark.svg'
+            },
+            'SD':  { 
+                city: 'Padres', bg: '#2F241D', 
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/SD_Padres_Logo.svg/1200px-SD_Padres_Logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/a/a4/San_Diego_Padres_wordmark.svg'
+            },
+            'SF':  { 
+                city: 'Giants', bg: '#FD5A1E', 
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/San_Francisco_Giants_Logo.svg/1200px-San_Francisco_Giants_Logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/d/df/San_Francisco_Giants_wordmark.svg'
+            },
+            'SEA': { 
+                city: 'Mariners', bg: '#0C2C56', 
+                logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/b0/Seattle_Mariners_logo.svg/1200px-Seattle_Mariners_logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/e/ea/Seattle_Mariners_wordmark.svg'
+            },
+            'STL': { 
+                city: 'Cardinals', bg: '#C41D3B', 
+                logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/9/9d/St._Louis_Cardinals_logo.svg/1200px-St._Louis_Cardinals_logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/f/f6/St._Louis_Cardinals_wordmark.svg'
+            },
+            'TBR': { 
+                city: 'Rays', bg: '#092C5C', 
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Tampa_Bay_Rays_Logo.svg/1200px-Tampa_Bay_Rays_Logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/5/52/Tampa_Bay_Rays_wordmark.svg'
+            },
+            'TEX': { 
+                city: 'Rangers', bg: '#003278', 
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Texas_Rangers_Insignia.svg/1200px-Texas_Rangers_Insignia.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/d/df/Texas_Rangers_wordmark.svg'
+            },
+            'TOR': { 
+                city: 'Blue Jays', bg: '#0D4889', 
+                logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/ba/Toronto_Blue_Jays_logo.svg/1200px-Toronto_Blue_Jays_logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/5/52/Toronto_Blue_Jays_wordmark_logo_wide_blue-red.svg'
+            },
+            'WSH': { 
+                city: 'Nationals', bg: '#AB0003', 
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Washington_Nationals_Interlocking_W_Logo.svg/1200px-Washington_Nationals_Interlocking_W_Logo.svg.png',
+                wordmark: 'https://upload.wikimedia.org/wikipedia/commons/2/22/Washington_Nationals_wordmark.svg'
+            }
         };
 
         const DOM = {
@@ -631,7 +736,9 @@
             bgAway: document.getElementById('bg-away-row'),
             bgHome: document.getElementById('bg-home-row'),
             clock: document.getElementById('ui-deck-clock'),
-            bases: [document.getElementById('b-1st'), document.getElementById('b-2nd'), document.getElementById('b-3rd')]
+            bases: [document.getElementById('b-1st'), document.getElementById('b-2nd'), document.getElementById('b-3rd')],
+            wrapAway: document.getElementById('wrap-away-teams'),
+            wrapHome: document.getElementById('wrap-home-teams')
         };
 
         function animateScoreShift(sideKey, incomingVal, oldVal) {
@@ -668,12 +775,30 @@
                 }
             }
 
-            // Sync matrix visual states
-            document.querySelectorAll('#matrix-away-slots .team-badge').forEach(badge => {
-                badge.className = 'team-badge' + (badge.getAttribute('data-code') === app.currentAwayCode ? ' active-away' : '');
-            });
-            document.querySelectorAll('#matrix-home-slots .team-badge').forEach(badge => {
-                badge.className = 'team-badge' + (badge.getAttribute('data-code') === app.currentHomeCode ? ' active-home' : '');
+            // Sync structural selection button colors seamlessly
+            Object.keys(mlbDatabase).forEach(key => {
+                const btnA = document.getElementById(`btn-team-away-${key}`);
+                const btnH = document.getElementById(`btn-team-home-${key}`);
+                
+                if(btnA) {
+                    if(key === app.currentAway) {
+                        btnA.style.backgroundColor = mlbDatabase[key].bg;
+                        btnA.classList.add('selected-active');
+                    } else {
+                        btnA.style.backgroundColor = '#2a2b2d';
+                        btnA.classList.remove('selected-active');
+                    }
+                }
+
+                if(btnH) {
+                    if(key === app.currentHome) {
+                        btnH.style.backgroundColor = mlbDatabase[key].bg;
+                        btnH.classList.add('selected-active');
+                    } else {
+                        btnH.style.backgroundColor = '#2a2b2d';
+                        btnH.classList.remove('selected-active');
+                    }
+                }
             });
         }
 
@@ -803,56 +928,40 @@
             render();
         }
 
-        function buildMatrixInterface() {
-            const containerAway = document.getElementById('matrix-away-slots');
-            const containerHome = document.getElementById('matrix-home-slots');
-            
-            const sortedCodes = Object.keys(mlbDatabase).sort();
-            
-            // Build split headers and badges directly inside matrices
-            ['AL', 'NL'].forEach(lg => {
-                const titleA = document.createElement('div');
-                titleA.className = 'league-split-title';
-                titleA.textContent = `${lg} Conference`;
-                containerAway.appendChild(titleA);
+        function initializeTeamSelectors() {
+            DOM.wrapAway.innerHTML = '';
+            DOM.wrapHome.innerHTML = '';
 
-                const titleH = document.createElement('div');
-                titleH.className = 'league-split-title';
-                titleH.textContent = `${lg} Conference`;
-                containerHome.appendChild(titleH);
+            Object.keys(mlbDatabase).sort().forEach(key => {
+                // Build Away button matrix
+                let btnA = document.createElement('button');
+                btnA.type = 'button';
+                btnA.className = 'team-select-btn';
+                btnA.id = `btn-team-away-${key}`;
+                btnA.textContent = key;
+                btnA.title = mlbDatabase[key].city;
+                btnA.onclick = () => selectTeamProfileInline('away', key);
+                DOM.wrapAway.appendChild(btnA);
 
-                sortedCodes.forEach(code => {
-                    if (mlbDatabase[code].league !== lg) return;
-
-                    // Away Matrix Button
-                    let badgeA = document.createElement('div');
-                    badgeA.className = 'team-badge';
-                    badgeA.setAttribute('data-code', code);
-                    badgeA.textContent = code;
-                    badgeA.title = mlbDatabase[code].city;
-                    badgeA.onclick = () => selectMatrixTeam('away', code);
-                    containerAway.appendChild(badgeA);
-
-                    // Home Matrix Button
-                    let badgeH = document.createElement('div');
-                    badgeH.className = 'team-badge';
-                    badgeH.setAttribute('data-code', code);
-                    badgeH.textContent = code;
-                    badgeH.title = mlbDatabase[code].city;
-                    badgeH.onclick = () => selectMatrixTeam('home', code);
-                    containerHome.appendChild(badgeH);
-                });
+                // Build Home button matrix
+                let btnH = document.createElement('button');
+                btnH.type = 'button';
+                btnH.className = 'team-select-btn';
+                btnH.id = `btn-team-home-${key}`;
+                btnH.textContent = key;
+                btnH.title = mlbDatabase[key].city;
+                btnH.onclick = () => selectTeamProfileInline('home', key);
+                DOM.wrapHome.appendChild(btnH);
             });
         }
 
-        function selectMatrixTeam(teamSlot, code) {
-            if (teamSlot === 'away') {
-                app.currentAwayCode = code;
+        function selectTeamProfileInline(teamSlot, code) {
+            if(teamSlot === 'away') {
+                app.currentAway = code;
             } else {
-                app.currentHomeCode = code;
+                app.currentHome = code;
             }
             loadPresetProfile(teamSlot, code);
-            render();
         }
 
         function loadPresetProfile(teamSlot, code) {
@@ -864,6 +973,7 @@
                 DOM.lblHome.textContent = code; DOM.bgHome.style.backgroundColor = config.bg;
                 document.getElementById('scroller-home').innerHTML = `<span>${app.scoreHome}</span>`;
             }
+            render();
         }
 
         function commitLineupSync() {
@@ -884,7 +994,7 @@
         }
 
         function terminateAndResetGame() {
-            app = { balls: 0, strikes: 0, outs: 0, scoreAway: 0, scoreHome: 0, inning: 1, isTop: true, pitchCount: 0, fieldBases: [false, false, false], currentAwayCode: 'TEX', currentHomeCode: 'TOR' };
+            app = { balls: 0, strikes: 0, outs: 0, scoreAway: 0, scoreHome: 0, inning: 1, isTop: true, pitchCount: 0, fieldBases: [false, false, false], currentAway: 'TEX', currentHome: 'TOR' };
             loadPresetProfile('away', 'TEX'); loadPresetProfile('home', 'TOR');
             render();
         }
@@ -991,10 +1101,9 @@
             }, 3700);
         }
 
-        buildMatrixInterface();
+        initializeTeamSelectors();
         loadPresetProfile('away', 'TEX');
         loadPresetProfile('home', 'TOR');
-        render();
     </script>
 </body>
 </html>
