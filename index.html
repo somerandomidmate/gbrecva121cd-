@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MLB Broadcast Scorebug Zoom-Refined</title>
+    <title>MLB Broadcast Scorebug</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:ital,wght@0,700;0,800;0,900;1,900&display=swap');
         
@@ -24,7 +24,7 @@
             position: relative;
             width: 310px;
             height: 145px;
-            margin-bottom: 55px; /* Added extra space between scorebug and control engine */
+            margin-bottom: 55px;
         }
 
         .scorebug {
@@ -44,11 +44,12 @@
         .hidden { display: none !important; }
         .invisible { opacity: 0 !important; pointer-events: none; }
 
-        /* --- UPPER PANEL (Batter Thingy) --- */
+        /* --- UPPER PANEL (Batter/Pitcher Cohesive GUI) --- */
         .upper-deck {
-            transition: max-height 0.3334s cubic-bezier(0.25, 1, 0.5, 1); /* Exact 20 frames at 60fps */
+            transition: max-height 0.3334s cubic-bezier(0.25, 1, 0.5, 1);
             max-height: 80px;
             overflow: hidden;
+            background-color: #00152c; /* Same uniform color for whole upper deck */
         }
         .upper-deck.collapsed { max-height: 0px !important; }
 
@@ -61,9 +62,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background-color: #00152c; /* Ensure background matches exactly */
+            color: #fff;
         }
-        .p-row { background-color: #00152c; color: #fff; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
-        .b-row { background-color: #002244; color: #fff; border-bottom: 2px solid rgba(255, 255, 255, 0.15); }
+        .p-row { border-bottom: none; } /* Removed the dividing lines */
+        .b-row { border-bottom: 2px solid rgba(255, 255, 255, 0.15); }
         .stat-txt { font-weight: 800; font-size: 15px; }
 
         /* --- MAIN GRID --- */
@@ -105,7 +108,6 @@
             box-shadow: 0 0 8px rgba(255,165,0,0.6);
         }
         
-        /* Absolute micro-anchoring center configurations */
         #b-2nd { top: 3px; left: 19px; }
         #b-3rd { top: 19px; left: 3px; }
         #b-1st { top: 19px; left: 35px; }
@@ -130,7 +132,7 @@
             text-align: left;
         }
         
-        /* --- EXACT BROADCAST SHIFT SCOREBOX MACHINERY --- */
+        /* --- RUN SCOREBOX MACHINERY --- */
         .score-txt {
             font-family: 'Archivo Black', sans-serif;
             width: 42px;
@@ -161,7 +163,6 @@
             line-height: 38px;
         }
 
-        /* Shift Animation Mechanics */
         .score-drop-anim {
             animation: scoreShiftDown 0.38s cubic-bezier(0.15, 0.85, 0.35, 1) forwards;
         }
@@ -171,7 +172,7 @@
             100% { transform: translateY(0px); }
         }
 
-        /* --- SPORTSNET LOGO BOX (Perfect 76px Square) --- */
+        /* --- SPORTSNET LOGO BOX --- */
         .network-box {
             width: 76px;
             height: 76px;
@@ -215,7 +216,6 @@
         }
         .clock-slot.collapsed { width: 0px !important; opacity: 0 !important; overflow: hidden; }
         
-        /* Layout container holding data elements to perfectly handle center balance alignment */
         .game-data-group {
             display: flex;
             flex-grow: 1;
@@ -331,13 +331,6 @@
             letter-spacing: 6px;
             margin-bottom: 2px;
         }
-        .hr-zoom-type.single-text {
-            font-size: 36px;
-            letter-spacing: 0.5px;
-        }
-        .hr-zoom-type.single-text span {
-            display: none;
-        }
 
         /* --- PRECISE FADES AND CONTINUOUS RATE-CHANGING ZOOMS OUT --- */
         @keyframes bugFadeIn { 
@@ -394,7 +387,6 @@
             background-color: #131416; color: white; border: 1px solid #5f6368; padding: 6px; border-radius: 4px; font-size: 13px; font-weight: 700;
         }
 
-        /* --- TEAM BUTTON SELECTOR --- */
         .team-grid-container {
             width: 100%;
             display: flex;
@@ -601,6 +593,8 @@
             currentHome: 'TOR'
         };
 
+        const backupPitchers = ["RODRIGUEZ", "MILLER", "JONES", "GARCIA", "LOPEZ", "SANTOS", "SULLIVAN", "O'NEILL"];
+
         const mlbDatabase = {
             'ARI': { city: 'Arizona', bg: '#A71930', logo: 'kifia/rwNa/Arizona%20Diamondbacks%20logo.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/7/7e/Arizona_Diamondbacks_wordmark_logo_teal_01.svg', logoOffset: { scale: 255, x: -25, y: -35 } },
             'ATL': { city: 'Braves', bg: '#012853', logo: 'kifia/rwNa/Atlanta%20Braves%20logo.png', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Atlanta_Braves_script.svg', logoOffset: { scale: 255, x: -25, y: -35 } },
@@ -714,18 +708,21 @@
         }
 
         function modifyBall() {
+            app.pitchCount++; // Increment immediately on event input
             app.balls++;
             if (app.balls >= 4) simulateWalk();
             render();
         }
 
         function modifyStrike() {
+            app.pitchCount++; // Increment immediately on event input
             app.strikes++;
             if (app.strikes >= 3) simulateStrikeout();
             render();
         }
 
         function modifyOut() {
+            app.pitchCount++; // Increment immediately on event input
             app.outs++;
             if (app.outs >= 3) rolloverHalfInning();
             render();
@@ -805,7 +802,6 @@
         }
 
         function simulateWalk() {
-            app.pitchCount++;
             if (!app.fieldBases[0]) { app.fieldBases[0] = true; } 
             else if (!app.fieldBases[1]) { app.fieldBases[1] = true; } 
             else if (!app.fieldBases[2]) { app.fieldBases[2] = true; } 
@@ -824,8 +820,8 @@
         }
 
         function simulateStrikeout() {
-            app.pitchCount++;
-            modifyOut();
+            app.outs++;
+            if (app.outs >= 3) rolloverHalfInning();
             wipeCount();
         }
 
@@ -836,6 +832,14 @@
         function shiftHalfInning() {
             if (app.isTop) app.isTop = false;
             else { app.isTop = true; app.inning++; }
+            
+            // Cycle the Pitcher and clear stats for new half-inning framework
+            app.pitchCount = 0;
+            const freshName = backupPitchers[Math.floor(Math.random() * backupPitchers.length)];
+            DOM.pitcher.textContent = freshName;
+            document.getElementById('in-p-name').value = freshName;
+            document.getElementById('in-p-count').value = 0;
+            
             render();
         }
 
@@ -913,6 +917,8 @@
             DOM.clock.classList.remove('collapsed');
             DOM.count.classList.remove('count-collapsed');
             document.getElementById('ui-deck-top').classList.remove('collapsed');
+            DOM.pitcher.textContent = "GINN";
+            document.getElementById('in-p-name').value = "GINN";
             render();
         }
 
@@ -922,11 +928,11 @@
             let activeOnBase = 0;
             app.fieldBases.forEach(b => { if(b) activeOnBase++; });
 
-            let typeStr = "SOLO";
-            let isGrandSlam = false;
-            if (activeOnBase === 1) typeStr = "2-RUN";
-            if (activeOnBase === 2) typeStr = "3-RUN";
-            if (activeOnBase === 3) { typeStr = "GRAND SLAM"; isGrandSlam = true; }
+            let lineOneStr = "SOLO";
+            let lineTwoStr = "HOME RUN";
+            if (activeOnBase === 1) lineOneStr = "2-RUN";
+            if (activeOnBase === 2) lineOneStr = "3-RUN";
+            if (activeOnBase === 3) { lineOneStr = "GRAND"; lineTwoStr = "SLAM"; }
 
             const runTeamCode = app.isTop ? DOM.lblAway.textContent : DOM.lblHome.textContent;
             const runProfile = mlbDatabase[runTeamCode];
@@ -937,17 +943,12 @@
             const teamText = document.getElementById('hr-team-title');
             const typeText = document.getElementById('hr-type-title');
 
-            // 1. Hide the batter panel over 20 frames (334ms)
             batterThingy.classList.add('collapsed');
 
-            // 2. Smoothly fade out the pitch clock and count container right away
             DOM.clock.classList.add('collapsed');
             DOM.count.classList.add('count-collapsed');
-            // NOTE: DOM.outs is skipped deliberately here so it doesn't hide!
 
-            // 3. WAIT until the Batter GUI has fully collapsed downward (334ms) + add an extra pause (400ms) before opening overlay
             setTimeout(() => {
-                // Setup Graphic Colors & Layouts
                 overlay.style.backgroundColor = runProfile.bg;
                 logoContainer.innerHTML = `<img id="hr-watermark-img" src="${runProfile.logo}" alt="Team Watermark">`;
                 
@@ -976,34 +977,24 @@
                     teamText.style.color = "#ffffff";
                 }
                 
-                if(isGrandSlam) {
-                    typeText.innerHTML = `GRAND SLAM`;
-                    typeText.classList.add('single-text');
-                } else {
-                    typeText.innerHTML = `<span>${typeStr}</span>HOME RUN`;
-                    typeText.classList.remove('single-text');
-                }
+                // Keep Grand Slam on a dynamic two-line architecture matching other states
+                typeText.innerHTML = `<span>${lineOneStr}</span>${lineTwoStr}`;
 
-                // Immediately fade overlay stage into visibility
                 overlay.style.animation = 'bugFadeIn 0.15s forwards';
 
-                // Trigger Team Logo Zoom OUT animation curve (Lasts 1.5s)
                 teamText.style.display = 'block';
                 teamText.style.animation = 'continuousZoomOutTeam 1.5s forwards linear';
 
-                // Hand-off transition: Hide logo and activate Home Run text type Zoom OUT curve
                 setTimeout(() => {
                     teamText.style.display = 'none';
                     typeText.style.display = 'block';
                     typeText.style.animation = 'continuousZoomOutType 2.8s forwards linear';
                 }, 1500);
 
-                // Initiation of final canvas exit fade out
                 setTimeout(() => {
                     overlay.style.animation = 'bugFadeOut 0.316s forwards ease-out';
                 }, 4300);
 
-                // Complete wipe and game scoreboard value iteration
                 setTimeout(() => {
                     typeText.style.display = 'none';
                     typeText.style.animation = ''; 
@@ -1025,7 +1016,7 @@
                     wipeCount();
                 }, 4616);
 
-            }, 334 + 400); // 334ms animation + 400ms steady dynamic pause
+            }, 334 + 400);
         }
 
         initializeTeamSelectors();
